@@ -2,30 +2,47 @@ import streamlit as st
 import joblib
 import pandas as pd
 from pathlib import Path
+import sys
+import traceback
 
+print(f"Python version: {sys.version}", file=sys.stderr)
+print(f"Current directory: {Path.cwd()}", file=sys.stderr)
+print(f"Files in directory: {list(Path.cwd().glob('*.pkl'))}", file=sys.stderr)
+
+st.set_page_config(page_title="California Housing Predictor", layout="centered")
 st.title('California Housing Price Predictor')
 st.write('Enter the details below to get a predicted house value.')
 
 
 def load_model():
+    """Load the trained KNN model."""
     preferred_file = Path('california_knn_pipeline.pkl')
+    print(f"Looking for model file: {preferred_file.absolute()}", file=sys.stderr)
+    
     if preferred_file.exists():
+        print(f"Found model file: {preferred_file}", file=sys.stderr)
         return joblib.load(preferred_file)
 
     fallback_files = sorted(Path('.').glob('california_knn_pipeline*.pkl'))
     if fallback_files:
+        print(f"Found fallback model file: {fallback_files[0]}", file=sys.stderr)
         return joblib.load(fallback_files[0])
 
+    available_files = list(Path('.').glob('*'))
     raise FileNotFoundError(
-        "No model file found. Run train.py or place a file named "
-        "'california_knn_pipeline.pkl' in this folder."
+        f"No model file found. Available files: {available_files}\n"
+        "Run train.py or ensure 'california_knn_pipeline.pkl' exists."
     )
 
 
 try:
+    print("Attempting to load model...", file=sys.stderr)
     model = load_model()
+    print("Model loaded successfully!", file=sys.stderr)
 except Exception as e:
-    st.error(f"Failed to load model: {e}")
+    error_msg = f"Failed to load model: {str(e)}\n\n{traceback.format_exc()}"
+    print(error_msg, file=sys.stderr)
+    st.error(error_msg)
     st.stop()
 
 #Creating  user input fields
